@@ -650,16 +650,17 @@ CallbackReturn KortexMultiInterfaceHardware::on_activate(
   const rclcpp_lifecycle::State & /* previous_state */)
 {
   RCLCPP_INFO(LOGGER, "Activating KortexMultiInterfaceHardware...");
+  RCLCPP_INFO(LOGGER, "Actuator count reported by robot is '%lu'", actuator_count_);
   // first read
   auto base_feedback = base_cyclic_.RefreshFeedback();
-  RCLCPP_INFO(LOGGER, "Actuator count reported by robot is '%lu'", actuator_count_);
+  RCLCPP_WARN(LOGGER, "on_activate 656");
   // Add each actuator to the base_command_ and set the command to its current position
   for (std::size_t i = 0; i < actuator_count_; i++)
   {
     RCLCPP_WARN(LOGGER, "  - %d", i);
     base_command_.add_actuators()->set_position(base_feedback.actuators(i).position());
   }
-  RCLCPP_WARN(LOGGER, "on_activate 661");
+  RCLCPP_WARN(LOGGER, "on_activate 663");
   // Initialize gripper
   float gripper_initial_position =
     base_feedback.interconnect().gripper_feedback().motor()[0].position();
