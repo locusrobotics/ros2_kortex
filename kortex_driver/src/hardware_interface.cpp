@@ -662,21 +662,24 @@ CallbackReturn KortexMultiInterfaceHardware::on_activate(
   RCLCPP_WARN(LOGGER, "on_activate 663");
   RCLCPP_WARN_STREAM(LOGGER, "base_feedback.interconnect(): " << base_feedback.interconnect().DebugString());
   RCLCPP_WARN_STREAM(LOGGER, "motor().size(): " << base_feedback.interconnect().gripper_feedback().motor().size());
-  // Initialize gripper
-  float gripper_initial_position =
-    base_feedback.interconnect().gripper_feedback().motor()[0].position();
-  RCLCPP_INFO(LOGGER, "Gripper initial position is '%f'.", gripper_initial_position);
+  if (!base_feedback.interconnect().gripper_feedback().motor().empty())
+  {
+    // Initialize gripper
+    float gripper_initial_position =
+      base_feedback.interconnect().gripper_feedback().motor()[0].position();
+    RCLCPP_INFO(LOGGER, "Gripper initial position is '%f'.", gripper_initial_position);
 
-  // to radians
-  gripper_command_position_ = gripper_initial_position / 100.0 * 0.81;
+    // to radians
+    gripper_command_position_ = gripper_initial_position / 100.0 * 0.81;
 
-  // Initialize interconnect command to current gripper position.
-  base_command_.mutable_interconnect()->mutable_command_id()->set_identifier(0);
-  gripper_motor_command_ =
-    base_command_.mutable_interconnect()->mutable_gripper_command()->add_motor_cmd();
-  gripper_motor_command_->set_position(gripper_initial_position);       // % position
-  gripper_motor_command_->set_velocity(gripper_command_max_velocity_);  // % speed
-  gripper_motor_command_->set_force(gripper_command_max_force_);        // % torque
+    // Initialize interconnect command to current gripper position.
+    base_command_.mutable_interconnect()->mutable_command_id()->set_identifier(0);
+    gripper_motor_command_ =
+      base_command_.mutable_interconnect()->mutable_gripper_command()->add_motor_cmd();
+    gripper_motor_command_->set_position(gripper_initial_position);       // % position
+    gripper_motor_command_->set_velocity(gripper_command_max_velocity_);  // % speed
+    gripper_motor_command_->set_force(gripper_command_max_force_);        // % torque
+  }
 
   // Send a first frame
   base_feedback = base_cyclic_.Refresh(base_command_);
