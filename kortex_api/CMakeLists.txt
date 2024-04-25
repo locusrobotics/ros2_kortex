@@ -6,8 +6,11 @@ FetchContent_Declare(
   URL https://artifactory.kinovaapps.com:443/artifactory/generic-public/kortex/API/2.5.0/linux_x86-64_x86_gcc.zip
   URL_HASH MD5=64bd86e7ab8bda90ef1fc7d6a356e080
 )
-
-FetchContent_MakeAvailable(kinova_binary_api)
+FetchContent_Declare(
+  kinova_arm_binary_api
+  URL https://artifactory.kinovaapps.com/artifactory/generic-public/kortex/API/2.6.0/linux_aarch64_gcc_7.4.zip
+  URL_HASH MD5=d7771a7c106888717ace359164d40235
+)
 
 project(kortex_api)
 
@@ -20,7 +23,11 @@ project(kortex_api)
 
 #Current: only support Linux x86_64
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+  FetchContent_MakeAvailable(kinova_binary_api)
   set(API_URL https://artifactory.kinovaapps.com:443/artifactory/generic-public/kortex/API/2.5.0/linux_x86-64_x86_gcc.zip)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+  FetchContent_MakeAvailable(kinova_arm_binary_api)
+  set(API_URL https://artifactory.kinovaapps.com/artifactory/generic-public/kortex/API/2.6.0/linux_aarch64_gcc_7.4.zip)
 else()
   set(API_URL "")
   message(FATAL_ERROR "Unsupported System: currently support is for Linux x68_64. Detected ${CMAKE_SYSTEM_NAME} and ${CMAKE_SYSTEM_PROCESSOR}")

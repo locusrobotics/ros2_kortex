@@ -31,11 +31,13 @@ find_package(kortex_api REQUIRED)
 #Current: only support Linux x86_64
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   set(API_URL https://artifactory.kinovaapps.com:443/artifactory/generic-public/kortex/API/2.5.0/linux_x86-64_x86_gcc.zip)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+  set(API_URL https://artifactory.kinovaapps.com/artifactory/generic-public/kortex/API/2.6.0/linux_aarch64_gcc_7.4.zip)
 else()
   # TODO(future) to support ARM or other builds logic could go here to fetch the precompiled libKortexApiCpp.a
   # see notes in kortex_api CMakeList.txt
   message(WARNING "Detected ${CMAKE_SYSTEM_NAME} and ${CMAKE_SYSTEM_PROCESSOR}")
-  message(FATAL_ERROR "Unsupported System: currently support is for Linux x68_64.")
+  message(FATAL_ERROR "Unsupported System: currently support is for Linux x68_64 and aarch64.")
 endif()
 
 # CMake does not allow IMPORTED libraries to be installed
