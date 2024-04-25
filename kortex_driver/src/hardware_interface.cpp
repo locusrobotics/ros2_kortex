@@ -341,6 +341,13 @@ KortexMultiInterfaceHardware::export_command_interfaces()
     {
       command_interfaces.emplace_back(hardware_interface::CommandInterface(
         info_.joints[i].name, hardware_interface::HW_IF_POSITION, &gripper_command_position_));
+
+      command_interfaces.emplace_back(hardware_interface::CommandInterface(
+        info_.joints[i].name, "set_gripper_max_velocity", &gripper_speed_command_));
+      gripper_speed_command_ = gripper_command_max_velocity_;
+      command_interfaces.emplace_back(hardware_interface::CommandInterface(
+        info_.joints[i].name, "set_gripper_max_effort", &gripper_force_command_));
+      gripper_force_command_ = gripper_command_max_force_;
     }
     else
     {
@@ -868,8 +875,7 @@ return_type KortexMultiInterfaceHardware::write(
 
       // gripper control
       sendGripperCommand(
-        arm_mode_, gripper_command_position_, gripper_command_max_velocity_,
-        gripper_command_max_force_);
+        arm_mode_, gripper_command_position_, gripper_speed_command_, gripper_force_command_);
       // read after write in twist mode
       feedback_ = base_cyclic_.RefreshFeedback();
     }
@@ -881,8 +887,7 @@ return_type KortexMultiInterfaceHardware::write(
 
       // gripper control
       sendGripperCommand(
-        arm_mode_, gripper_command_position_, gripper_command_max_velocity_,
-        gripper_command_max_force_);
+        arm_mode_, gripper_command_position_, gripper_speed_command_, gripper_force_command_);
 
       if (joint_based_controller_running_)
       {
