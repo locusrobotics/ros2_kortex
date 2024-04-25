@@ -3,8 +3,7 @@ include(FetchContent)
 #include(ExternalProject)
 FetchContent_Declare(
   kinova_binary_api
-  URL https://artifactory.kinovaapps.com:443/artifactory/generic-public/kortex/API/2.5.0/linux_x86-64_x86_gcc.zip
-  URL_HASH MD5=64bd86e7ab8bda90ef1fc7d6a356e080
+  URL https://artifactory.kinovaapps.com/artifactory/generic-public/kortex/API/2.6.0/linux_aarch64_gcc_7.4.zip
 )
 FetchContent_Declare(
   kinova_arm_binary_api
