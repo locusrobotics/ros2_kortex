@@ -674,8 +674,8 @@ CallbackReturn KortexMultiInterfaceHardware::on_activate(
       base_feedback.interconnect().gripper_feedback().motor()[0].position();
     RCLCPP_INFO(LOGGER, "Gripper initial position is '%f'.", gripper_initial_position);
 
-  // to radians
-  gripper_command_position_ = gripper_initial_position / 100.0 * 0.81;
+    // to radians
+    gripper_command_position_ = gripper_initial_position / 100.0 * 0.81;
 
     // Initialize interconnect command to current gripper position.
     base_command_.mutable_interconnect()->mutable_command_id()->set_identifier(0);
