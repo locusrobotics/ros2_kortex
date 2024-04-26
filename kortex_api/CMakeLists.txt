@@ -3,7 +3,8 @@ include(FetchContent)
 #include(ExternalProject)
 FetchContent_Declare(
   kinova_binary_api
-  URL https://artifactory.kinovaapps.com/artifactory/generic-public/kortex/API/2.6.0/linux_aarch64_gcc_7.4.zip
+  URL https://artifactory.kinovaapps.com/artifactory/generic-public/kortex/API/2.6.0/linux_x86_64_gcc_5.4.zip
+  URL_HASH MD5=a990f7941ecd9e3d1d986b1aa461cc81
 )
 FetchContent_Declare(
   kinova_arm_binary_api
@@ -23,7 +24,7 @@ project(kortex_api)
 #Current: only support Linux x86_64
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   FetchContent_MakeAvailable(kinova_binary_api)
-  set(API_URL https://artifactory.kinovaapps.com:443/artifactory/generic-public/kortex/API/2.5.0/linux_x86-64_x86_gcc.zip)
+  set(API_URL https://artifactory.kinovaapps.com/artifactory/generic-public/kortex/API/2.6.0/linux_x86_64_gcc_5.4.zip)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
   FetchContent_MakeAvailable(kinova_arm_binary_api)
   set(API_URL https://artifactory.kinovaapps.com/artifactory/generic-public/kortex/API/2.6.0/linux_aarch64_gcc_7.4.zip)
