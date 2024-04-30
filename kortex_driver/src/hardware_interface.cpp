@@ -681,9 +681,9 @@ CallbackReturn KortexMultiInterfaceHardware::on_activate(
     base_command_.mutable_interconnect()->mutable_command_id()->set_identifier(0);
     gripper_motor_command_ =
       base_command_.mutable_interconnect()->mutable_gripper_command()->add_motor_cmd();
-    gripper_motor_command_->set_position(gripper_initial_position);       // % position
-    gripper_motor_command_->set_velocity(gripper_command_max_velocity_);  // % speed
-    gripper_motor_command_->set_force(gripper_command_max_force_);        // % torque
+    gripper_motor_command_->set_position(gripper_initial_position);  // % position
+    gripper_motor_command_->set_velocity(gripper_speed_command_);    // % speed
+    gripper_motor_command_->set_force(gripper_force_command_);       // % force
   }
 
   // Send a first frame
