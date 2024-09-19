@@ -810,12 +810,20 @@ void KortexMultiInterfaceHardware::readGripperPosition()
 }
 
 return_type KortexMultiInterfaceHardware::write(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
 {
   if (block_write)
   {
     feedback_ = base_cyclic_.RefreshFeedback();
     return return_type::OK;
+  }
+
+  const auto max_period = 0.002;
+  if (period.seconds() > max_period)
+  {
+    RCLCPP_ERROR(
+      LOGGER, "Update frequency has fallen below %0.1f: Actual: %0.1f", 1.0 / max_period,
+      1 / period.seconds());
   }
 
   if (!std::isnan(reset_fault_cmd_) && fault_controller_running_)
