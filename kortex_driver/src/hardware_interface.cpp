@@ -995,12 +995,12 @@ void KortexMultiInterfaceHardware::sendJointCommands()
 
   std::chrono::duration<double, std::milli> duration = end - start;
   std::chrono::duration<double, std::milli> duration_rw = end - start_read_write;
-  constexpr auto kMaxMs = 3.5;
+  constexpr auto kMaxMs = 3.0;
   if(duration.count() > kMaxMs) {
-    RCLCPP_ERROR(LOGGER, "Send Joint Command Exceeded Max Send Time %f / %d", duration.count(), kMaxMs);
+    RCLCPP_ERROR(LOGGER, "Send Joint Command Exceeded Max Send Time %f / %f", duration.count(), kMaxMs);
   }
   if(duration_rw.count() > kMaxMs) {
-    RCLCPP_ERROR(LOGGER, "Base Cyclic Refresh Exceeded Max Send Time %f / %d", duration_rw.count(), kMaxMs);
+    RCLCPP_ERROR(LOGGER, "Base Cyclic Refresh Exceeded Max Send Time %f / %f", duration_rw.count(), kMaxMs);
   }
 }
 
