@@ -754,12 +754,20 @@ CallbackReturn KortexMultiInterfaceHardware::on_deactivate(
 }
 
 return_type KortexMultiInterfaceHardware::read(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
 {
   if (first_pass_)
   {
     first_pass_ = false;
     feedback_ = base_cyclic_.RefreshFeedback();
+  }
+
+  const auto max_period = 0.006;
+  if (period.seconds() > max_period)
+  {
+    RCLCPP_ERROR(
+      LOGGER, "[Read] Update frequency has fallen below %0.1f: Actual: %0.1f", 1.0 / max_period,
+      1 / period.seconds());
   }
 
   // read if robot is faulted
@@ -822,7 +830,7 @@ return_type KortexMultiInterfaceHardware::write(
   if (period.seconds() > max_period)
   {
     RCLCPP_ERROR(
-      LOGGER, "Update frequency has fallen below %0.1f: Actual: %0.1f", 1.0 / max_period,
+      LOGGER, "[Write] Update frequency has fallen below %0.1f: Actual: %0.1f", 1.0 / max_period,
       1 / period.seconds());
   }
 
