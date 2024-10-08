@@ -965,7 +965,7 @@ void KortexMultiInterfaceHardware::sendJointCommands()
   auto start_read_write = std::chrono::high_resolution_clock::now();
   try
   {
-    auto feedback_ = base_cyclic_.Refresh(base_command_, 0, {false, 0, 2000});  // send the command to the robot
+    auto feedback_ = base_cyclic_.Refresh(base_command_, 0, {false, 0, 2500});  // send the command to the robot
     // if(feedback.frame_id() == base_command_.frame_id()) {
     //   feedback_ = feedback;
     // }
