@@ -818,7 +818,7 @@ return_type KortexMultiInterfaceHardware::write(
     return return_type::OK;
   }
 
-  const auto max_period = 0.002;
+  const auto max_period = 0.008;
   if (period.seconds() > max_period)
   {
     RCLCPP_ERROR(
@@ -947,6 +947,7 @@ void KortexMultiInterfaceHardware::prepareCommands()
 
 void KortexMultiInterfaceHardware::sendJointCommands()
 {
+  auto start = std::chrono::high_resolution_clock::now();
   // identifier++
   incrementId();
 
@@ -980,6 +981,14 @@ void KortexMultiInterfaceHardware::sendJointCommands()
   {
     feedback_ = base_cyclic_.RefreshFeedback();
     RCLCPP_ERROR_STREAM(LOGGER, "Standard exception: " << ex_std.what());
+  }
+
+  auto end = std::chrono::high_resolution_clock::now();
+
+  std::chrono::duration<double, std::milli> duration = end - start;
+  constexpr auto kMaxMs = 1;
+  if(duration.count() > kMaxSendMs) {
+    RCLCPP_ERROR("Send Joint Command Exceeded Max Send Time %d / %d", duration.count(), kMaxMs);
   }
 }
 
