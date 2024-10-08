@@ -988,7 +988,7 @@ void KortexMultiInterfaceHardware::sendJointCommands()
   std::chrono::duration<double, std::milli> duration = end - start;
   constexpr auto kMaxMs = 1;
   if(duration.count() > kMaxMs) {
-    RCLCPP_ERROR(LOGGER, "Send Joint Command Exceeded Max Send Time %d / %d", duration.count(), kMaxMs);
+    RCLCPP_ERROR(LOGGER, "Send Joint Command Exceeded Max Send Time %f / %d", duration.count(), kMaxMs);
   }
 }
 
