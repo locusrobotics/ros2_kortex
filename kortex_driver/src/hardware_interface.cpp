@@ -818,7 +818,7 @@ return_type KortexMultiInterfaceHardware::write(
     return return_type::OK;
   }
 
-  const auto max_period = 0.008;
+  const auto max_period = 0.006;
   if (period.seconds() > max_period)
   {
     RCLCPP_ERROR(
@@ -987,7 +987,7 @@ void KortexMultiInterfaceHardware::sendJointCommands()
 
   std::chrono::duration<double, std::milli> duration = end - start;
   constexpr auto kMaxMs = 1;
-  if(duration.count() > kMaxSendMs) {
+  if(duration.count() > kMaxMs) {
     RCLCPP_ERROR("Send Joint Command Exceeded Max Send Time %d / %d", duration.count(), kMaxMs);
   }
 }
