@@ -965,9 +965,10 @@ void KortexMultiInterfaceHardware::sendJointCommands()
   auto start_read_write = std::chrono::high_resolution_clock::now();
   try
   {
-    auto feedback = base_cyclic_.Refresh(base_command_, 0, {false, 0, 3000});  // send the command to the robot
-    if(feedback == k_api::BaseCyclic::Feedback::default_instance()) {
-      RCLCPP_ERROR(LOGGER, "Feedback is default instance! Possible timeout issue");
+    k_api::BaseCyclic::Feedback feedback;
+    feedback = base_cyclic_.Refresh(base_command_, 0, {false, 0, 3000});  // send the command to the robot
+    if(!feedback.IsInitialized()) {
+      RCLCPP_ERROR(LOGGER, "Feedback is not Initialized! Possible timeout issue");
     }
     else {
       feedback_ = feedback;
