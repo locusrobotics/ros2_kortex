@@ -965,9 +965,9 @@ void KortexMultiInterfaceHardware::sendJointCommands()
   auto start_read_write = std::chrono::high_resolution_clock::now();
   try
   {
-    k_api::BaseCyclic::Feedback feedback;
-    feedback = base_cyclic_.Refresh(base_command_, 0, {false, 0, 3000});  // send the command to the robot
-    if(!feedback.IsInitialized()) {
+    auto feedback = k_api::BaseCyclic::Feedback::default_instance();
+    feedback = base_cyclic_.Refresh(base_command_, 0, {false, 0, 2500});  // send the command to the robot
+    if(feedback.actuators_size() != base_command_.actuators_size()) {
       RCLCPP_ERROR(LOGGER, "Feedback is not Initialized! Possible timeout issue");
     }
     else {
