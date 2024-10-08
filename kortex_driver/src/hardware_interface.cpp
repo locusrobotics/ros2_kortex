@@ -966,7 +966,7 @@ void KortexMultiInterfaceHardware::sendJointCommands()
   try
   {
     auto feedback = base_cyclic_.Refresh(base_command_, 0, {false, 0, 3000});  // send the command to the robot
-    if(feedback == k_api::Feedback::default_instance()) {
+    if(feedback == k_api::BaseCyclic::Feedback::default_instance()) {
       RCLCPP_ERROR(LOGGER, "Feedback is default instance! Possible timeout issue");
     }
     else {
