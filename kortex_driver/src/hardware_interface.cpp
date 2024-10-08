@@ -954,6 +954,7 @@ void KortexMultiInterfaceHardware::sendJointCommands()
   prepareCommands();
 
   // send the command to the robot
+  auto start_read_write = std::chrono::high_resolution_clock::now();
   try
   {
     feedback_ = base_cyclic_.Refresh(base_command_);
@@ -982,13 +983,16 @@ void KortexMultiInterfaceHardware::sendJointCommands()
     feedback_ = base_cyclic_.RefreshFeedback();
     RCLCPP_ERROR_STREAM(LOGGER, "Standard exception: " << ex_std.what());
   }
-
   auto end = std::chrono::high_resolution_clock::now();
 
   std::chrono::duration<double, std::milli> duration = end - start;
-  constexpr auto kMaxMs = 1;
+  std::chrono::duration<double, std::milli> duration_rw = end - start_read_write;
+  constexpr auto kMaxMs = 3.5;
   if(duration.count() > kMaxMs) {
     RCLCPP_ERROR(LOGGER, "Send Joint Command Exceeded Max Send Time %f / %d", duration.count(), kMaxMs);
+  }
+  if(duration_rw.count() > kMaxMs) {
+    RCLCPP_ERROR(LOGGER, "Base Cyclic Refresh Exceeded Max Send Time %f / %d", duration_rw.count(), kMaxMs);
   }
 }
 
