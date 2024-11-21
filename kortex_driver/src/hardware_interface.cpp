@@ -76,7 +76,7 @@ KortexMultiInterfaceHardware::KortexMultiInterfaceHardware()
   use_internal_bus_gripper_comm_(false)
 {
   RCLCPP_INFO(LOGGER, "Setting severity threshold to DEBUG");
-  auto ret = rcutils_logging_set_logger_level(LOGGER.get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
+  auto ret = rcutils_logging_set_logger_level(LOGGER.get_name(), RCUTILS_LOG_SEVERITY_ERROR);
   if (ret != RCUTILS_RET_OK)
   {
     RCLCPP_ERROR(LOGGER, "Error setting severity: %s", rcutils_get_error_string().str);
@@ -211,7 +211,7 @@ CallbackReturn KortexMultiInterfaceHardware::on_init(const hardware_interface::H
     }
     catch (k_api::KDetailedException & ex)
     {
-      RCLCPP_ERROR_STREAM(LOGGER, "Kortex exception: " << ex.what());
+      RCLCPP_ERROR_STREAM(LOGGER, "Kortex exception during onInit clearfaults: " << ex.what());
 
       RCLCPP_ERROR_STREAM(
         LOGGER, "Error sub-code: " << k_api::SubErrorCodes_Name(
@@ -758,9 +758,22 @@ return_type KortexMultiInterfaceHardware::read(
 {
   if (first_pass_)
   {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     first_pass_ = false;
-    feedback_ = base_cyclic_.RefreshFeedback();
-  }
+    try
+    {
+      feedback_ = base_cyclic_.Refresh(base_command_);
+    }
+    catch (k_api::KDetailedException & ex)
+    {
+      feedback_ = base_cyclic_.RefreshFeedback();
+      RCLCPP_ERROR_STREAM(LOGGER, "Kortex exception during read first pass: " << ex.what());
+
+      RCLCPP_ERROR_STREAM(
+      LOGGER, "Error sub-code: " << k_api::SubErrorCodes_Name(
+       	         k_api::SubErrorCodes((ex.getErrorInfo().getError().error_sub_code()))));
+    }
+   }
 
   // read if robot is faulted
   in_fault_ = (feedback_.base().active_state() == Kinova::Api::Common::ArmState::ARMSTATE_IN_FAULT);
@@ -817,8 +830,8 @@ return_type KortexMultiInterfaceHardware::write(
     feedback_ = base_cyclic_.RefreshFeedback();
     return return_type::OK;
   }
-
-  const auto max_period = 0.002;
+  
+  const auto max_period = 0.004;
   if (period.seconds() > max_period)
   {
     RCLCPP_ERROR(
@@ -851,7 +864,7 @@ return_type KortexMultiInterfaceHardware::write(
     }
     catch (k_api::KDetailedException & ex)
     {
-      RCLCPP_ERROR_STREAM(LOGGER, "Kortex exception: " << ex.what());
+      RCLCPP_ERROR_STREAM(LOGGER, "Kortex exception during Clearing faults: " << ex.what());
 
       RCLCPP_ERROR_STREAM(
         LOGGER, "Error sub-code: " << k_api::SubErrorCodes_Name(
@@ -905,7 +918,19 @@ return_type KortexMultiInterfaceHardware::write(
       else
       {
         // Keep alive mode - no controller active
-        feedback_ = base_cyclic_.RefreshFeedback();
+        try
+    	{
+      	feedback_ = base_cyclic_.Refresh(base_command_);
+    	}
+    	catch (k_api::KDetailedException & ex)
+    	{
+      	feedback_ = base_cyclic_.RefreshFeedback();
+      	RCLCPP_ERROR_STREAM(LOGGER, "Kortex exception during Keep Alive Mode: " << ex.what());
+
+      	RCLCPP_ERROR_STREAM(
+      	LOGGER, "Error sub-code: " << k_api::SubErrorCodes_Name(
+       	         k_api::SubErrorCodes((ex.getErrorInfo().getError().error_sub_code()))));
+   	 }
         RCLCPP_DEBUG(LOGGER, "No controller active in LOW_LEVEL_SERVOING mode !");
       }
     }
@@ -960,7 +985,7 @@ void KortexMultiInterfaceHardware::sendJointCommands()
   catch (k_api::KDetailedException & ex)
   {
     feedback_ = base_cyclic_.RefreshFeedback();
-    RCLCPP_ERROR_STREAM(LOGGER, "Kortex exception: " << ex.what());
+    RCLCPP_ERROR_STREAM(LOGGER, "Kortex exception during sendJointCommands: " << ex.what());
 
     RCLCPP_ERROR_STREAM(
       LOGGER, "Error sub-code: " << k_api::SubErrorCodes_Name(
@@ -981,6 +1006,7 @@ void KortexMultiInterfaceHardware::sendJointCommands()
     feedback_ = base_cyclic_.RefreshFeedback();
     RCLCPP_ERROR_STREAM(LOGGER, "Standard exception: " << ex_std.what());
   }
+  RCLCPP_INFO(LOGGER, "Sent a successful joint command");
 }
 
 void KortexMultiInterfaceHardware::incrementId()
