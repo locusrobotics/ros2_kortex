@@ -758,6 +758,7 @@ return_type KortexMultiInterfaceHardware::read(
 {
   if (first_pass_)
   {
+    // Wait here to mitigate exceptions on startup with low compute devices  
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     first_pass_ = false;
     try
