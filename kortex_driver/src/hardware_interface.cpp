@@ -983,7 +983,7 @@ void KortexMultiInterfaceHardware::sendJointCommands()
   catch (k_api::KDetailedException & ex)
   {
     feedback_ = base_cyclic_.RefreshFeedback();
-    RCLCPP_ERROR_STREAM(LOGGER, "Kortex exception during sendJointCommands: " << ex.what());
+    RCLCPP_ERROR_STREAM(LOGGER, "Kortex Detailed Exception on sendJointCommands: " << ex.what());
 
     RCLCPP_ERROR_STREAM(
       LOGGER, "Error sub-code: " << k_api::SubErrorCodes_Name(
