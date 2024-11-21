@@ -75,8 +75,8 @@ KortexMultiInterfaceHardware::KortexMultiInterfaceHardware()
   gripper_joint_name_(""),
   use_internal_bus_gripper_comm_(false)
 {
-  RCLCPP_INFO(LOGGER, "Setting severity threshold to DEBUG");
-  auto ret = rcutils_logging_set_logger_level(LOGGER.get_name(), RCUTILS_LOG_SEVERITY_ERROR);
+  RCLCPP_INFO(LOGGER, "Setting severity threshold to INFO");
+  auto ret = rcutils_logging_set_logger_level(LOGGER.get_name(), RCUTILS_LOG_SEVERITY_INFO);
   if (ret != RCUTILS_RET_OK)
   {
     RCLCPP_ERROR(LOGGER, "Error setting severity: %s", rcutils_get_error_string().str);
