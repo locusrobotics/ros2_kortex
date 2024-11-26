@@ -864,7 +864,7 @@ return_type KortexMultiInterfaceHardware::write(
     }
     catch (k_api::KDetailedException & ex)
     {
-      RCLCPP_ERROR_STREAM(LOGGER, "Kortex exception during Clearing faults: " << ex.what());
+      RCLCPP_ERROR_STREAM(LOGGER, "Kortex exception during clearing faults: " << ex.what());
 
       RCLCPP_ERROR_STREAM(
         LOGGER, "Error sub-code: " << k_api::SubErrorCodes_Name(
