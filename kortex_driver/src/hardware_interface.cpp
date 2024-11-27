@@ -33,6 +33,10 @@
 #include "kortex_driver/hardware_interface.hpp"
 #include "kortex_driver/kortex_math_util.hpp"
 
+#include "ActuatorConfig.pb.h"
+#include "DeviceConfigClientRpc.h"
+#include "DeviceManagerClientRpc.h"
+
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -198,6 +202,22 @@ CallbackReturn KortexMultiInterfaceHardware::on_init(const hardware_interface::H
   session_manager_.CreateSession(create_session_info);
   session_manager_real_time_.CreateSession(create_session_info);
   RCLCPP_INFO(LOGGER, "Session created");
+
+  namespace DeviceManager = Kinova::Api::DeviceManager;
+  namespace DeviceConfig = Kinova::Api::DeviceConfig;
+  namespace ActuatorConfig = Kinova::Api::ActuatorConfig;
+  DeviceManager::DeviceManagerClient config_manager_client(&router_tcp_);
+  DeviceManager::DeviceHandles device_handles = config_manager_client.ReadAllDevices();
+
+  DeviceConfig::DeviceConfigClient config_config_client(&router_tcp_);
+  DeviceConfig::SafetyEnable safety_disable_msg;
+  safety_disable_msg.set_enable(false);
+  safety_disable_msg.mutable_handle()->set_identifier(
+    ActuatorConfig::SafetyIdentifierBankA::BRAKE_DRIVE_FAULT & ActuatorConfig::SafetyIdentifierBankA::BRAKE_RELEASE_MOTION_OUT_OF_RANGE);
+  for (int index = 0; index < device_handles.device_handle_size(); ++index) {
+    RCLCPP_ERROR(LOGGER, "Disable Safety for device: %d", device_handles.device_handle(index).device_identifier());
+    config_config_client.SetSafetyEnable(safety_disable_msg, device_handles.device_handle(index).device_identifier());
+  }
 
   // reset faults on activation, go back to low level servoing after
   {
