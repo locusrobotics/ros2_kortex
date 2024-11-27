@@ -218,6 +218,7 @@ private:
     k_api::Base::ServoingMode arm_mode, double position, double velocity, double force);
 
   void readGripperPosition();
+  void resetFaults();
 };
 
 }  // namespace kortex_driver
