@@ -213,10 +213,14 @@ CallbackReturn KortexMultiInterfaceHardware::on_init(const hardware_interface::H
   DeviceConfig::SafetyEnable safety_disable_msg;
   safety_disable_msg.set_enable(false);
   safety_disable_msg.mutable_handle()->set_identifier(
-    ActuatorConfig::SafetyIdentifierBankA::BRAKE_DRIVE_FAULT & ActuatorConfig::SafetyIdentifierBankA::BRAKE_RELEASE_MOTION_OUT_OF_RANGE);
-  for (int index = 0; index < device_handles.device_handle_size(); ++index) {
-    RCLCPP_ERROR(LOGGER, "Disable Safety for device: %d", device_handles.device_handle(index).device_identifier());
-    config_config_client.SetSafetyEnable(safety_disable_msg, device_handles.device_handle(index).device_identifier());
+    ActuatorConfig::SafetyIdentifierBankA::BRAKE_DRIVE_FAULT);// & ActuatorConfig::SafetyIdentifierBankA::BRAKE_RELEASE_MOTION_OUT_OF_RANGE);
+  RCLCPP_ERROR(LOGGER, "Number of devices found: %d", device_handles.device_handle_size());
+  // Skip the first device which is the controller
+  for (int index = 1; index < device_handles.device_handle_size(); ++index) {
+    auto& device_handle = device_handles.device_handle(index);
+    RCLCPP_ERROR(LOGGER, "Disable Safety for device: %d, type: %d",
+		 device_handle.device_identifier(), device_handle.device_type());
+    config_config_client.SetSafetyEnable(safety_disable_msg, device_handle.device_identifier());
   }
 
   // reset faults on activation, go back to low level servoing after
