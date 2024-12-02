@@ -214,13 +214,15 @@ CallbackReturn KortexMultiInterfaceHardware::on_init(const hardware_interface::H
   // Send message to all actuators
   k_api::DeviceManager::DeviceManagerClient config_manager_client(&router_tcp_);
   k_api::DeviceManager::DeviceHandles device_handles = config_manager_client.ReadAllDevices();
-  std::set<k_api::Common::DeviceTypes> actuator_types
-    {k_api::Common::DeviceTypes::BIG_ACTUATOR, k_api::Common::DeviceTypes::SMALL_ACTUATOR,
-     k_api::Common::DeviceTypes::MEDIUM_ACTUATOR, k_api::Common::DeviceTypes::XBIG_ACTUATOR};
+  std::set<k_api::Common::DeviceTypes> actuator_types{
+    k_api::Common::DeviceTypes::BIG_ACTUATOR, k_api::Common::DeviceTypes::SMALL_ACTUATOR,
+    k_api::Common::DeviceTypes::MEDIUM_ACTUATOR, k_api::Common::DeviceTypes::XBIG_ACTUATOR};
   // Skip the first device which is the controller
-  for (int index = 1; index < device_handles.device_handle_size(); ++index) {
-    auto& device_handle = device_handles.device_handle(index);
-    if (actuator_types.find(device_handle.device_type()) != actuator_types.end()) {
+  for (int index = 1; index < device_handles.device_handle_size(); ++index)
+  {
+    auto & device_handle = device_handles.device_handle(index);
+    if (actuator_types.find(device_handle.device_type()) != actuator_types.end())
+    {
       config_config_client.SetSafetyEnable(safety_disable_msg, device_handle.device_identifier());
     }
   }
