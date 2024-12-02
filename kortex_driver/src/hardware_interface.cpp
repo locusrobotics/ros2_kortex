@@ -33,6 +33,7 @@
 #include "kortex_driver/hardware_interface.hpp"
 #include "kortex_driver/kortex_math_util.hpp"
 
+// kortex_api headers
 #include "ActuatorConfig.pb.h"
 #include "DeviceConfigClientRpc.h"
 #include "DeviceManagerClientRpc.h"
