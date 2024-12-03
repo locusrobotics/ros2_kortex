@@ -33,6 +33,11 @@
 #include "kortex_driver/hardware_interface.hpp"
 #include "kortex_driver/kortex_math_util.hpp"
 
+// kortex_api headers
+#include "ActuatorConfig.pb.h"
+#include "DeviceConfigClientRpc.h"
+#include "DeviceManagerClientRpc.h"
+
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -198,6 +203,30 @@ CallbackReturn KortexMultiInterfaceHardware::on_init(const hardware_interface::H
   session_manager_.CreateSession(create_session_info);
   session_manager_real_time_.CreateSession(create_session_info);
   RCLCPP_INFO(LOGGER, "Session created");
+
+  // Create SafetyEnable message to disable break-drive fault checks
+  RCLCPP_WARN(LOGGER, "Disabling Break-Drive fault checks");
+  k_api::DeviceConfig::DeviceConfigClient config_config_client(&router_tcp_);
+  k_api::DeviceConfig::SafetyEnable safety_disable_msg;
+  safety_disable_msg.set_enable(false);
+  safety_disable_msg.mutable_handle()->set_identifier(
+    k_api::ActuatorConfig::SafetyIdentifierBankA::BRAKE_DRIVE_FAULT);
+
+  // Send message to all actuators
+  k_api::DeviceManager::DeviceManagerClient config_manager_client(&router_tcp_);
+  k_api::DeviceManager::DeviceHandles device_handles = config_manager_client.ReadAllDevices();
+  std::set<k_api::Common::DeviceTypes> actuator_types{
+    k_api::Common::DeviceTypes::BIG_ACTUATOR, k_api::Common::DeviceTypes::SMALL_ACTUATOR,
+    k_api::Common::DeviceTypes::MEDIUM_ACTUATOR, k_api::Common::DeviceTypes::XBIG_ACTUATOR};
+  // Skip the first device which is the controller
+  for (int index = 1; index < device_handles.device_handle_size(); ++index)
+  {
+    auto & device_handle = device_handles.device_handle(index);
+    if (actuator_types.find(device_handle.device_type()) != actuator_types.end())
+    {
+      config_config_client.SetSafetyEnable(safety_disable_msg, device_handle.device_identifier());
+    }
+  }
 
   // reset faults on activation, go back to low level servoing after
   {
