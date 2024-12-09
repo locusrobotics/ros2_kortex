@@ -1008,6 +1008,7 @@ void KortexMultiInterfaceHardware::sendTwistCommand()
 
 void KortexMultiInterfaceHardware::resetFaults()
 {
+  const auto sleep_delay = 500;  // milliseconds
   if (in_fault_ == 0.0)
   {
     reset_fault_async_success_ = 1.0;
@@ -1021,13 +1022,13 @@ void KortexMultiInterfaceHardware::resetFaults()
     servoing_mode_hw_.set_servoing_mode(k_api::Base::ServoingMode::SINGLE_LEVEL_SERVOING);
     base_.SetServoingMode(servoing_mode_hw_);
     // wait for the switch to apply
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(sleep_delay));
     // apply emergency stop and wait a little bit before clearing faults
     base_.ApplyEmergencyStop();
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(sleep_delay));
     // clear faults
     base_.ClearFaults();
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(sleep_delay));
     // refresh the arm state to see if we were successful
     feedback_ = base_cyclic_.RefreshFeedback();
     if (feedback_.base().active_state() == k_api::Common::ARMSTATE_IN_FAULT)
@@ -1097,7 +1098,7 @@ void KortexMultiInterfaceHardware::resetFaults()
     {
       servoing_mode_hw_.set_servoing_mode(arm_mode_);
       base_.SetServoingMode(servoing_mode_hw_);
-      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      std::this_thread::sleep_for(std::chrono::milliseconds(sleep_delay));
     }
     reset_fault_async_success_ = 1.0;  // report success!
   }
@@ -1121,6 +1122,14 @@ void KortexMultiInterfaceHardware::resetFaults()
     RCLCPP_ERROR(LOGGER, "Exception description: %s", ex_runtime.what());
     reset_fault_async_success_ = 0.0;
     reset_fault_cmd_ = NO_CMD;  // clear the reset_fault_cmd
+  }
+  catch (...)
+  {
+    RCLCPP_ERROR(
+      LOGGER,
+      "Unknown exception caught while clearing faults.\n"
+      "Please update the driver to catch the exception observed!");
+    reset_fault_async_success_ = 0.0;
   }
   reset_fault_cmd_ = NO_CMD;  // clear the reset_fault_cmd
 }
