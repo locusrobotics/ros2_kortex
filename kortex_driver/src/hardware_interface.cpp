@@ -230,9 +230,9 @@ CallbackReturn KortexMultiInterfaceHardware::on_init(const hardware_interface::H
 
   // reset faults on activation, go back to low level servoing after
   {
-    servoing_mode_hw_.set_servoing_mode(Kinova::Api::Base::SINGLE_LEVEL_SERVOING);
+    servoing_mode_hw_.set_servoing_mode(k_api::Base::SINGLE_LEVEL_SERVOING);
     base_.SetServoingMode(servoing_mode_hw_);
-    arm_mode_ = Kinova::Api::Base::SINGLE_LEVEL_SERVOING;
+    arm_mode_ = k_api::Base::SINGLE_LEVEL_SERVOING;
 
     try
     {
@@ -248,8 +248,8 @@ CallbackReturn KortexMultiInterfaceHardware::on_init(const hardware_interface::H
     }
 
     // low level servoing on startup
-    servoing_mode_hw_.set_servoing_mode(Kinova::Api::Base::LOW_LEVEL_SERVOING);
-    arm_mode_ = Kinova::Api::Base::LOW_LEVEL_SERVOING;
+    servoing_mode_hw_.set_servoing_mode(k_api::Base::LOW_LEVEL_SERVOING);
+    arm_mode_ = k_api::Base::LOW_LEVEL_SERVOING;
     base_.SetServoingMode(servoing_mode_hw_);
   }
 
@@ -792,7 +792,7 @@ return_type KortexMultiInterfaceHardware::read(
   }
 
   // read if robot is faulted
-  in_fault_ = (feedback_.base().active_state() == Kinova::Api::Common::ArmState::ARMSTATE_IN_FAULT);
+  in_fault_ = (feedback_.base().active_state() == k_api::Common::ArmState::ARMSTATE_IN_FAULT);
 
   // read gripper state
   readGripperPosition();
@@ -857,41 +857,7 @@ return_type KortexMultiInterfaceHardware::write(
 
   if (!std::isnan(reset_fault_cmd_) && fault_controller_running_)
   {
-    try
-    {
-      // change servoing mode first
-      servoing_mode_hw_.set_servoing_mode(k_api::Base::ServoingMode::SINGLE_LEVEL_SERVOING);
-      base_.SetServoingMode(servoing_mode_hw_);
-      // apply emergency stop - twice to make it sure as calling it once appeared to be unreliable
-      // (detected by testing)
-      base_.ApplyEmergencyStop(0, {false, 0, 100});
-      base_.ApplyEmergencyStop(0, {false, 0, 100});
-      // clear faults
-      base_.ClearFaults();
-      // back to original servoing mode
-      if (
-        arm_mode_ == k_api::Base::ServoingMode::SINGLE_LEVEL_SERVOING ||
-        arm_mode_ == k_api::Base::ServoingMode::LOW_LEVEL_SERVOING)
-      {
-        servoing_mode_hw_.set_servoing_mode(arm_mode_);
-        base_.SetServoingMode(servoing_mode_hw_);
-      }
-      reset_fault_async_success_ = 1.0;
-    }
-    catch (k_api::KDetailedException & ex)
-    {
-      RCLCPP_ERROR_STREAM(LOGGER, "Kortex exception: " << ex.what());
-
-      RCLCPP_ERROR_STREAM(
-        LOGGER, "Error sub-code: " << k_api::SubErrorCodes_Name(
-                  k_api::SubErrorCodes((ex.getErrorInfo().getError().error_sub_code()))));
-      reset_fault_async_success_ = 0.0;
-    }
-    catch (...)
-    {
-      reset_fault_async_success_ = 0.0;
-    }
-    reset_fault_cmd_ = NO_CMD;
+    resetFaults();
   }
 
   if (in_fault_ == 0.0)
@@ -1067,6 +1033,134 @@ void KortexMultiInterfaceHardware::sendTwistCommand()
   k_api_twist_->set_angular_y(static_cast<float>(twist_commands_[4]));
   k_api_twist_->set_angular_z(static_cast<float>(twist_commands_[5]));
   base_.SendTwistCommand(k_api_twist_command_);
+}
+
+void KortexMultiInterfaceHardware::resetFaults()
+{
+  const auto sleep_delay = 500;  // milliseconds
+  if (in_fault_ == 0.0)
+  {
+    reset_fault_async_success_ = 1.0;
+    reset_fault_cmd_ = NO_CMD;  // clear the reset_fault_cmd
+    RCLCPP_INFO(LOGGER, "Arm is not in a faulted state. Returning SUCCESS from resetFaults().");
+    return;
+  }
+  try
+  {
+    // change servoing mode first
+    servoing_mode_hw_.set_servoing_mode(k_api::Base::ServoingMode::SINGLE_LEVEL_SERVOING);
+    base_.SetServoingMode(servoing_mode_hw_);
+    // wait for the switch to apply
+    std::this_thread::sleep_for(std::chrono::milliseconds(sleep_delay));
+    // apply emergency stop and wait a little bit before clearing faults
+    base_.ApplyEmergencyStop();
+    std::this_thread::sleep_for(std::chrono::milliseconds(sleep_delay));
+    // clear faults
+    base_.ClearFaults();
+    std::this_thread::sleep_for(std::chrono::milliseconds(sleep_delay));
+    // refresh the arm state to see if we were successful
+    feedback_ = base_cyclic_.RefreshFeedback();
+    if (feedback_.base().active_state() == k_api::Common::ARMSTATE_IN_FAULT)
+    {
+      RCLCPP_ERROR(LOGGER, "Clearing faults was unsuccessful. Listing known faults below.");
+      // check the base for faults and warnings and report any values found
+      if (feedback_.base().fault_bank_a())
+      {
+        auto fault_name = k_api::Base::SafetyIdentifier_Name(
+          k_api::Base::SafetyIdentifier(feedback_.base().fault_bank_a()));
+        RCLCPP_ERROR(LOGGER, "Base returned fault_bank_a: %s", fault_name.c_str());
+      }
+      if (feedback_.base().warning_bank_a())
+      {
+        auto warning_name = k_api::Base::SafetyIdentifier_Name(
+          k_api::Base::SafetyIdentifier(feedback_.base().warning_bank_a()));
+        RCLCPP_WARN(LOGGER, "Base returned warning_bank_a: %s", warning_name.c_str());
+      }
+      if (feedback_.base().fault_bank_b())
+      {
+        auto fault_name = k_api::Base::SafetyIdentifier_Name(
+          k_api::Base::SafetyIdentifier(feedback_.base().fault_bank_b()));
+        RCLCPP_ERROR(LOGGER, "Base returned fault_bank_b: %s", fault_name.c_str());
+      }
+      if (feedback_.base().warning_bank_b())
+      {
+        auto warning_name = k_api::Base::SafetyIdentifier_Name(
+          k_api::Base::SafetyIdentifier(feedback_.base().warning_bank_b()));
+        RCLCPP_WARN(LOGGER, "Base returned warning_bank_b: %s", warning_name.c_str());
+      }
+      // check each actuator for faults and warnings and report any values found
+      for (std::size_t i = 0; i < actuator_count_; i++)
+      {
+        if (feedback_.actuators(i).fault_bank_a())
+        {
+          auto fault_name = k_api::Base::SafetyIdentifier_Name(
+            k_api::Base::SafetyIdentifier(feedback_.actuators(i).fault_bank_a()));
+          RCLCPP_ERROR(LOGGER, "Joint[%zu] returned fault_bank_a: %s", i, fault_name.c_str());
+        }
+        if (feedback_.actuators(i).warning_bank_a())
+        {
+          auto warning_name = k_api::Base::SafetyIdentifier_Name(
+            k_api::Base::SafetyIdentifier(feedback_.actuators(i).warning_bank_a()));
+          RCLCPP_WARN(LOGGER, "Joint[%zu] returned warning_bank_a: %s", i, warning_name.c_str());
+        }
+        if (feedback_.actuators(i).fault_bank_b())
+        {
+          auto fault_name = k_api::Base::SafetyIdentifier_Name(
+            k_api::Base::SafetyIdentifier(feedback_.actuators(i).fault_bank_b()));
+          RCLCPP_ERROR(LOGGER, "Joint[%zu] returned fault_bank_b: %s", i, fault_name.c_str());
+        }
+        if (feedback_.actuators(i).warning_bank_b())
+        {
+          auto warning_name = k_api::Base::SafetyIdentifier_Name(
+            k_api::Base::SafetyIdentifier(feedback_.actuators(i).warning_bank_b()));
+          RCLCPP_WARN(LOGGER, "Joint[%zu] returned warning_bank_b: %s", i, warning_name.c_str());
+        }
+      }
+      reset_fault_async_success_ = 0.0;  // tell the fault controller we were unsuccessful
+      reset_fault_cmd_ = NO_CMD;         // clear the reset_fault_cmd
+      return;
+    }
+    // ClearFaults() was successful, switch back to original servoing mode
+    if (
+      arm_mode_ == k_api::Base::ServoingMode::SINGLE_LEVEL_SERVOING ||
+      arm_mode_ == k_api::Base::ServoingMode::LOW_LEVEL_SERVOING)
+    {
+      servoing_mode_hw_.set_servoing_mode(arm_mode_);
+      base_.SetServoingMode(servoing_mode_hw_);
+      std::this_thread::sleep_for(std::chrono::milliseconds(sleep_delay));
+    }
+    reset_fault_async_success_ = 1.0;  // report success!
+  }
+  catch (k_api::KDetailedException & ex)
+  {
+    RCLCPP_ERROR(LOGGER, "Kortex exception while clearing the faults.");
+    RCLCPP_ERROR(
+      LOGGER, "Error code: %s\n",
+      k_api::ErrorCodes_Name(ex.getErrorInfo().getError().error_code()).c_str());
+    RCLCPP_ERROR(
+      LOGGER, "Error sub code: %s\n",
+      k_api::SubErrorCodes_Name(k_api::SubErrorCodes(ex.getErrorInfo().getError().error_sub_code()))
+        .c_str());
+    RCLCPP_ERROR(LOGGER, "Error description: %s\n", ex.what());
+    reset_fault_async_success_ = 0.0;
+    reset_fault_cmd_ = NO_CMD;  // clear the reset_fault_cmd
+  }
+  catch (std::runtime_error & ex_runtime)
+  {
+    RCLCPP_ERROR(LOGGER, "Runtime exception detected while clearing the faults.");
+    RCLCPP_ERROR(LOGGER, "Exception description: %s", ex_runtime.what());
+    reset_fault_async_success_ = 0.0;
+    reset_fault_cmd_ = NO_CMD;  // clear the reset_fault_cmd
+  }
+  catch (...)
+  {
+    RCLCPP_ERROR(
+      LOGGER,
+      "Unknown exception caught while clearing faults.\n"
+      "Please update the driver to catch the exception observed!");
+    reset_fault_async_success_ = 0.0;
+  }
+  reset_fault_cmd_ = NO_CMD;  // clear the reset_fault_cmd
 }
 
 }  // namespace kortex_driver
