@@ -816,7 +816,7 @@ void KortexMultiInterfaceHardware::readGripperPosition()
 }
 
 return_type KortexMultiInterfaceHardware::write(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   if (in_fault_)
   {
@@ -830,15 +830,6 @@ return_type KortexMultiInterfaceHardware::write(
     return return_type::OK;
   }
 
-  const auto max_period = 0.002;
-  if (period.seconds() > max_period)
-  {
-    RCLCPP_ERROR(
-      LOGGER, "Update frequency has fallen below %0.1f: Actual: %0.1f", 1.0 / max_period,
-      1 / period.seconds());
-  }
-
-  if (arm_mode_ == k_api::Base::ServoingMode::SINGLE_LEVEL_SERVOING)
   {
     // Twist controller active
     if (twist_controller_running_)
