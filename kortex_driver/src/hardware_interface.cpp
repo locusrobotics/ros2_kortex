@@ -830,39 +830,38 @@ return_type KortexMultiInterfaceHardware::write(
     return return_type::OK;
   }
 
+  // Twist controller active?
+  if ((arm_mode_ == k_api::Base::ServoingMode::SINGLE_LEVEL_SERVOING))
   {
-    // Twist controller active
     if (twist_controller_running_)
     {
       // twist control
       sendTwistCommand();
+
+      // gripper control
+      sendGripperCommand(
+        arm_mode_, gripper_command_position_, gripper_speed_command_, gripper_force_command_);
+      // read after write in twist mode
+      feedback_ = base_cyclic_.RefreshFeedback();
     }
     else
     {
       // Keep alive mode - no controller active
       RCLCPP_DEBUG(LOGGER, "No controller active in SINGLE_LEVEL_SERVOING mode!");
     }
-
-    // gripper control
-    sendGripperCommand(
-      arm_mode_, gripper_command_position_, gripper_speed_command_, gripper_force_command_);
-    // read after write in twist mode
-    feedback_ = base_cyclic_.RefreshFeedback();
   }
+  // Per joint controller active?
   else if (
     (arm_mode_ == k_api::Base::ServoingMode::LOW_LEVEL_SERVOING) &&
     (feedback_.base().active_state() == k_api::Common::ARMSTATE_SERVOING_LOW_LEVEL))
   {
-    // Per joint controller active
-
-    // gripper control
-    sendGripperCommand(
-      arm_mode_, gripper_command_position_, gripper_speed_command_, gripper_force_command_);
-
     if (joint_based_controller_running_)
     {
       // send commands to the joints
       sendJointCommands();
+      // gripper control
+      sendGripperCommand(
+        arm_mode_, gripper_command_position_, gripper_speed_command_, gripper_force_command_);
     }
     else
     {
