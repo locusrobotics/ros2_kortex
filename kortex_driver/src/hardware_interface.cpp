@@ -641,10 +641,10 @@ CallbackReturn KortexMultiInterfaceHardware::on_activate(
   RCLCPP_INFO(LOGGER, "Activating KortexMultiInterfaceHardware...");
 
   // first read
-  auto base_feedback = base_cyclic_.RefreshFeedback();
+  feedback_ = base_cyclic_.RefreshFeedback();
 
   // if the controller is faulted make sure we can clear it
-  if (base_feedback.base().active_state() == k_api::Common::ArmState::ARMSTATE_IN_FAULT)
+  if (feedback_.base().active_state() == k_api::Common::ArmState::ARMSTATE_IN_FAULT)
   {
     RCLCPP_WARN(LOGGER, "Hardware is faulted, attempting to clear.");
     // try to clear the fault
@@ -659,16 +659,17 @@ CallbackReturn KortexMultiInterfaceHardware::on_activate(
   }
 
   // Add each actuator to the base_command_ and set the command to its current position
+  base_command_.Clear();
   for (std::size_t i = 0; i < actuator_count_; i++)
   {
-    base_command_.add_actuators()->set_position(base_feedback.actuators(i).position());
+    base_command_.add_actuators()->set_position(feedback_.actuators(i).position());
   }
 
-  if (!base_feedback.interconnect().gripper_feedback().motor().empty())
+  if (!feedback_.interconnect().gripper_feedback().motor().empty())
   {
     // Initialize gripper
     float gripper_initial_position =
-      base_feedback.interconnect().gripper_feedback().motor()[0].position();
+      feedback_.interconnect().gripper_feedback().motor()[0].position();
     RCLCPP_INFO(LOGGER, "Gripper initial position is '%f'.", gripper_initial_position);
 
     // to radians
@@ -683,15 +684,20 @@ CallbackReturn KortexMultiInterfaceHardware::on_activate(
     gripper_motor_command_->set_force(gripper_force_command_);       // % force
   }
 
+  // switch to low level servoing before we send the first frame
+  servoing_mode_hw_.set_servoing_mode(k_api::Base::LOW_LEVEL_SERVOING);
+  arm_mode_ = k_api::Base::LOW_LEVEL_SERVOING;
+  base_.SetServoingMode(servoing_mode_hw_);
+
   // Send a first frame
-  base_feedback = base_cyclic_.Refresh(base_command_);
+  feedback_ = base_cyclic_.Refresh(base_command_);
   // Set some default values
   for (std::size_t i = 0; i < actuator_count_; i++)
   {
     if (std::isnan(arm_positions_[i]))
     {
       arm_positions_[i] = KortexMathUtil::wrapRadiansFromMinusPiToPi(
-        KortexMathUtil::toRad(base_feedback.actuators(i).position()));  // rad
+        KortexMathUtil::toRad(feedback_.actuators(i).position()));  // rad
     }
     if (std::isnan(arm_velocities_[i]))
     {
@@ -704,7 +710,7 @@ CallbackReturn KortexMultiInterfaceHardware::on_activate(
     if (std::isnan(arm_commands_positions_[i]))
     {
       arm_commands_positions_[i] = KortexMathUtil::wrapRadiansFromMinusPiToPi(
-        KortexMathUtil::toRad(base_feedback.actuators(i).position()));  // rad
+        KortexMathUtil::toRad(feedback_.actuators(i).position()));  // rad
     }
     if (std::isnan(arm_commands_velocities_[i]))
     {
@@ -716,11 +722,6 @@ CallbackReturn KortexMultiInterfaceHardware::on_activate(
     }
     arm_joints_control_level_[i] = integration_lvl_t::UNDEFINED;
   }
-
-  // switch to low level servoing
-  servoing_mode_hw_.set_servoing_mode(k_api::Base::LOW_LEVEL_SERVOING);
-  arm_mode_ = k_api::Base::LOW_LEVEL_SERVOING;
-  base_.SetServoingMode(servoing_mode_hw_);
 
   RCLCPP_INFO(LOGGER, "KortexMultiInterfaceHardware successfully activated!");
   return CallbackReturn::SUCCESS;
@@ -1070,7 +1071,8 @@ bool KortexMultiInterfaceHardware::resetFaults()
       }
       return false;
     }
-    // ClearFaults() was successful!
+    in_fault_ = false;
+    RCLCPP_INFO(LOGGER, "Success clearing faults!");
     return true;
   }
   catch (k_api::KDetailedException & ex)
