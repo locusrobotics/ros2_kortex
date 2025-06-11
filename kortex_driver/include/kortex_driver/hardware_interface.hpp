@@ -53,8 +53,6 @@
 namespace hardware_interface
 {
 constexpr char HW_IF_TWIST[] = "twist";
-constexpr char HW_IF_FAULT[] = "fault";
-
 }  // namespace hardware_interface
 
 using hardware_interface::return_type;
@@ -70,11 +68,9 @@ enum class StopStartInterface
   STOP_POS_VEL,
   STOP_TWIST,
   STOP_GRIPPER,
-  STOP_FAULT_CTRL,
   START_POS_VEL,
   START_TWIST,
   START_GRIPPER,
-  START_FAULT_CTRL,
 };
 class KortexMultiInterfaceHardware : public hardware_interface::SystemInterface
 {
@@ -174,7 +170,6 @@ private:
   bool joint_based_controller_running_;
   bool twist_controller_running_;
   bool gripper_controller_running_;
-  bool fault_controller_running_;
   // switching auxiliary vars
   // keeping track of which controller is active so appropriate control mode can be adjusted
   // controller manager sends array of interfaces that should be stopped/started and this is the
@@ -186,11 +181,10 @@ private:
   bool stop_joint_based_controller_;
   bool stop_twist_controller_;
   bool stop_gripper_controller_;
-  bool stop_fault_controller_;
   bool start_joint_based_controller_;
   bool start_twist_controller_;
   bool start_gripper_controller_;
-  bool start_fault_controller_;
+  bool in_fault_;
 
   // first pass flag
   bool first_pass_;
@@ -204,12 +198,6 @@ private:
   float cmd_vel_tmp_;
   int num_turns_tmp_ = 0;
 
-  // fault control
-  double reset_fault_cmd_;
-  double reset_fault_async_success_;
-  double in_fault_;
-  static constexpr double NO_CMD = std::numeric_limits<double>::quiet_NaN();
-
   void sendTwistCommand();
   void incrementId();
   void sendJointCommands();
@@ -218,7 +206,7 @@ private:
     k_api::Base::ServoingMode arm_mode, double position, double velocity, double force);
 
   void readGripperPosition();
-  void resetFaults();
+  bool resetFaults();
 };
 
 }  // namespace kortex_driver
