@@ -45,6 +45,7 @@
 
 #include "BaseClientRpc.h"
 #include "BaseCyclicClientRpc.h"
+#include "DeviceConfigClientRpc.h"
 #include "RouterClient.h"
 #include "SessionManager.h"
 #include "TransportClientTcp.h"
@@ -134,6 +135,9 @@ private:
   std::vector<double> arm_positions_;
   std::vector<double> arm_velocities_;
   std::vector<double> arm_efforts_;
+
+  // Query Kinova device information
+  k_api::DeviceConfig::DeviceConfigClient device_config_;
 
   // twist command interfaces
   std::vector<double> twist_commands_;

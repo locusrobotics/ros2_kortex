@@ -60,6 +60,7 @@ KortexMultiInterfaceHardware::KortexMultiInterfaceHardware()
   k_api_twist_(nullptr),
   base_{&router_tcp_},
   base_cyclic_{&router_udp_realtime_},
+  device_config_{&router_tcp_},
   gripper_motor_command_(nullptr),
   gripper_command_max_velocity_(100.0),
   gripper_command_max_force_(100.0),
@@ -261,6 +262,9 @@ CallbackReturn KortexMultiInterfaceHardware::on_init(const hardware_interface::H
   }
 
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+  auto firmware_version = device_config_.GetFirmwareVersion().firmware_version();
+  RCLCPP_ERROR(LOGGER, "Device firmware version is '%d'", firmware_version);
 
   actuator_count_ = base_.GetActuatorCount().count();
   RCLCPP_INFO(LOGGER, "Actuator count reported by robot is '%lu'", actuator_count_);
