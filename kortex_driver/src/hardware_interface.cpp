@@ -263,9 +263,6 @@ CallbackReturn KortexMultiInterfaceHardware::on_init(const hardware_interface::H
 
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-  RCLCPP_ERROR(LOGGER, "Fetching device firmware version...");
-  auto firmware_version = device_config_.GetFirmwareVersion().firmware_version();
-  RCLCPP_ERROR(LOGGER, "Device firmware version is '%d'", firmware_version);
 
   actuator_count_ = base_.GetActuatorCount().count();
   RCLCPP_INFO(LOGGER, "Actuator count reported by robot is '%lu'", actuator_count_);
@@ -319,6 +316,20 @@ CallbackReturn KortexMultiInterfaceHardware::on_init(const hardware_interface::H
 
   RCLCPP_INFO(LOGGER, "Hardware Interface successfully configured");
   return CallbackReturn::SUCCESS;
+}
+
+hardware_interface::CallbackReturn KortexMultiInterfaceHardware::on_configure(
+  const rclcpp_lifecycle::State & /*previous_state*/)
+{
+  RCLCPP_INFO(get_logger(), "Configuring ...please wait...");
+
+  RCLCPP_ERROR(LOGGER, "Fetching device firmware version...");
+  auto firmware_version = device_config_.GetFirmwareVersion().firmware_version();
+  RCLCPP_ERROR(LOGGER, "Device firmware version is '%d'", firmware_version);
+
+  RCLCPP_INFO(get_logger(), "Successfully configured!");
+
+  return hardware_interface::CallbackReturn::SUCCESS;
 }
 
 std::vector<hardware_interface::StateInterface>

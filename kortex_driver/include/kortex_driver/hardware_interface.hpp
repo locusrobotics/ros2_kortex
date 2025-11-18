@@ -84,6 +84,9 @@ public:
   CallbackReturn on_init(const hardware_interface::HardwareInfo & info) final;
 
   KORTEX_DRIVER_PUBLIC
+  CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) final;
+
+  KORTEX_DRIVER_PUBLIC
   std::vector<hardware_interface::StateInterface> export_state_interfaces() final;
 
   KORTEX_DRIVER_PUBLIC
