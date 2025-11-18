@@ -263,6 +263,7 @@ CallbackReturn KortexMultiInterfaceHardware::on_init(const hardware_interface::H
 
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
+  RCLCPP_ERROR(LOGGER, "Fetching device firmware version...");
   auto firmware_version = device_config_.GetFirmwareVersion().firmware_version();
   RCLCPP_ERROR(LOGGER, "Device firmware version is '%d'", firmware_version);
 
